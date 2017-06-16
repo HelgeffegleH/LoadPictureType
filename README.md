@@ -1,7 +1,7 @@
 # LoadPictureType
 Load a picture and specify the type of the returned handle; `hBitmap, hIcon or hCursor.`
 
-Use the regular LoadPicture parameters, see https://autohotkey.com/docs/commands/LoadPicture.htm
+Use the regular LoadPicture parameters, see [LoadPicture](https://autohotkey.com/docs/commands/LoadPicture.htm "I like pie")
 
 The parameter ImageType specifies the type of the returned handle, `IMAGE_BITMAP:=0, IMAGE_ICON:=1, IMAGE_CURSOR:=2`
 
