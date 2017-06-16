@@ -11,7 +11,7 @@
 		else if (ImageType==LoadPictureType.IMAGE_ICON)
 			this.makeIcon(bkColor)
 		else if (ImageType==LoadPictureType.IMAGE_CURSOR)
-			this.makeCursor(bkColor,xHotspot:=0, yHotspot:=0)
+			this.makeCursor(bkColor,xHotspot, yHotspot)
 		else{
 			this.deleteObject(this.hImg)
 			throw Exception("Invalid image type: " ImageType ".")
@@ -60,7 +60,7 @@
 		return
 	}
 	makeCursor(bkColor, xHotspot:=0, yHotspot:=0){
-		local hCursor:=this.createIconIndirect(this.hImg, false, bkColor, xHotspot:=0, yHotspot:=0)
+		local hCursor:=this.createIconIndirect(this.hImg, false, bkColor, xHotspot, yHotspot)
 		this.deleteObject(this.hImg)
 		this.hImg:=hCursor
 		return
