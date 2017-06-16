@@ -10,3 +10,5 @@ The load sometimes fails if the `"gdi+"` options is specified.
 If getting an icon or cursor handle, specify the background color (RGB) of the bitmap, via the `bkColor` parameter, this color will be transparent.
 
 For cursors, you may specify the hotspot coordinates, via the `xHotspot` and `yHotspot` parameters.
+
+For circular reference: [AutoHotkey community](https://autohotkey.com/boards/viewtopic.php?f=6&t=33209 "AHK forum")
