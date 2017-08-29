@@ -44,7 +44,7 @@
 
 	; Internal methods.
 	__Delete(){
-		this.doAutoFreeHandles ? this.freeHandle() : ""
+		(this.doAutoFreeHandles ? this.freeHandle() : "")
 	}
 	LoadPicture(Filename,options:=""){
 		local hBitmap
@@ -52,20 +52,24 @@
 			throw Exception("LoadPicture failed.")
 		return hBitmap
 	}
-	
 	makeIcon(bkColor){	
 		local hIcon:=this.createIconIndirect(this.hImg, true, bkColor)
-		this.deleteObject(this.hImg)
+		this.deleteSourceBitmap() ;  conditional
 		this.hImg:=hIcon
 		return
 	}
 	makeCursor(bkColor, xHotspot:=0, yHotspot:=0){
 		local hCursor:=this.createIconIndirect(this.hImg, false, bkColor, xHotspot, yHotspot)
-		this.deleteObject(this.hImg)
+		this.deleteSourceBitmap() ;  conditional
 		this.hImg:=hCursor
 		return
 	}
-	
+	deleteSourceHBITMAP:=true
+	deleteSourceBitmap(){
+		if this.deleteSourceHBITMAP
+			this.deleteObject(this.hImg)
+		return
+	}
 	createIconIndirect(hBitmap, fIcon:=1, bkColor:=0x000000, xHotspot:=0, yHotspot:=0){
 		/*
 		ICONINFO:				sz				o
@@ -78,10 +82,10 @@
 		
 		total:					ps=4?20:32
 		*/
+		
 		local bmps:=this.andXOrBitmap(hBitmap,bkColor)
 		local ICONINFO
 		VarSetCapacity(ICONINFO, A_PtrSize==4?20:32,0)
-		
 		NumPut(fIcon, 			ICONINFO, 				   0, "Int")
 		NumPut(xHotspot, 		ICONINFO, 				   4, "Int")
 		NumPut(yHotspot, 		ICONINFO, 				   8, "Int")
@@ -102,7 +106,7 @@
 		; Scope: this is the reference from __new()
 		local r:=LoadPictureType ; For convenience - r - reference 
 		local BITMAP:=r._getBitmap(hBitmap)
-		this.keepBITMAP ? this.BITMAP:=BITMAP :""
+		(this.keepBITMAP ? this.BITMAP:=BITMAP :"")
 		local hClientDC:=r.getDc()
 		local hDCCreate         	:=	r.createCompatibleDC(hClientDC)
 		local hDCImage          	:=	r.createCompatibleDC(hClientDC)	
@@ -274,6 +278,7 @@
 					,planes:			NumGet(&BITMAP,		16,	 "UShort")                       ; bmPlanes
 					,bitsPixel:			NumGet(&BITMAP,		18,  "UShort")                       ; bmBitsPixel
 					,bits:				NumGet(&BITMAP,	 pBits, 	"Ptr")}                      ; bmBits
+		
 		return BITMAP
 	}
 	createBitmap(w,h,widthBytes,cBitsPerPel:=32, lpvBitsIsNull:=false){
