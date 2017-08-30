@@ -41,7 +41,6 @@
 			this.destroyCursor(this.hImg)
 		return this.hImg:=""
 	}
-
 	; Internal methods.
 	__Delete(){
 		(this.doAutoFreeHandles ? this.freeHandle() : "")
@@ -106,6 +105,8 @@
 		; Scope: this is the reference from __new()
 		local r:=LoadPictureType ; For convenience - r - reference 
 		local BITMAP:=r._getBitmap(hBitmap)
+		if (BITMAP.bitsPixel != 24)
+			BITMAP := r.convertBITMAPtoXbpp(24,BITMAP, hBitmap)
 		(this.keepBITMAP ? this.BITMAP:=BITMAP :"")
 		local hClientDC:=r.getDc()
 		local hDCCreate         	:=	r.createCompatibleDC(hClientDC)
@@ -146,6 +147,28 @@
 
 		r.releaseDC(0,hClientDC)		
 		return {hbmMask:hAndBitmap, hbmColor:hXOrBitmap, disposableObjects:[hDDB,hAndBitmap,hXOrBitmap]}
+	}
+	convertBITMAPtoXbpp(bpp, BITMAP, hBitmap){
+		local r:=LoadPictureType ; For convenience - r - reference 
+		local hClientDC			:= r.getDc()
+		BITMAP.bitsPixel:=bpp	
+		local BITMAPINFO
+		r.BITMAPtoStruct(BITMAP, BITMAPINFO) ; BITMAPINFO is byref
+		local newHBITMAP 		:= r.CreateDIBSection(&BITMAPINFO,hClientDC).1	; Returns [hDIB, ppvBits]
+		local hDCSource			:= r.createCompatibleDC(hClientDC)
+		local hDCDest			:= r.createCompatibleDC(hClientDC)	
+		local hOldhBitmap		:= r.selectObject(hDCSource, hBitmap)
+		local hOldnewHBITMAP    := r.selectObject(hDCDest, newHBITMAP)
+		static SRCCOPY:=0x00CC0020
+		r.bitBlt(hDCDest, 0, 0, BITMAP.w, BITMAP.h, hDCSource, 0, 0, SRCCOPY)
+		r.selectObject(hDCSource, hOldhBitmap)
+		r.selectObject(hDCDest, hOldnewHBITMAP)
+		r.deleteDC(hDCSource)
+		r.deleteDC(hDCDest)
+		r.releaseDC(0,hClientDC)
+		r.deleteObject(hOldhBitmap)
+		r.deleteObject(hOldnewHBITMAP)
+		return r._getBitmap(newHBITMAP)
 	}
 	BITMAPtoStruct(BITMAP, ByRef BITMAPINFO){
 		; Create bitmap info struct
@@ -204,6 +227,20 @@
 			throw Exception("Failed to set DIBbits, ErrorLevel: " ErrorLevel " Last error: " A_LastError ".",-1)
 		return nLines
 	}
+	CreateDIBSection(BITMAPINFO, hDC){
+		; URL:
+		;	- https://msdn.microsoft.com/en-us/library/windows/desktop/dd183494(v=vs.85).aspx (CreateDIBSection function)
+		; Note:
+		;	- If the function succeeds, the return value is a handle to the newly created DIB, and *ppvBits points to the bitmap bit values.
+		;	  If the function fails, the return value is NULL, and *ppvBits is NULL.
+		;
+		static DIB_RGB_COLORS:=0 ; iUsage
+		local ppvBits
+		local hDIB:=DllCall("Gdi32.dll\CreateDIBSection", "Ptr", hDC, "Ptr", BITMAPINFO, "Uint", DIB_RGB_COLORS, "PtrP", ppvBits, "Ptr", 0, "Uint", 0, "Ptr")
+		if !hDIB
+			throw exception("CreateDIBSection failed, ErrorLevel: " ErrorLevel " Last error: " A_LastError ".",-1)
+		return [hDIB,ppvBits]
+	}
 	selectObject(hdc, hgdiobj){
 		static HGDI_ERROR:=0xFFFFFFFF
 		local hRet:=DllCall("Gdi32.dll\SelectObject", "Ptr", hDc, "Ptr", hgdiobj, "Ptr")
@@ -212,7 +249,6 @@
 		else if !hRet
 			throw Exception("Failed to select object, Error: NULL,  ErrorLevel: " ErrorLevel " Last error: " A_LastError ".",-1)
 		return hRet
-		
 	}
 	setBkColor(hDc,bkColor){
 		static CLR_INVALID:=0xFFFFFFFF
